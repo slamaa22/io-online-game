@@ -1,0 +1,10 @@
+node_modules
+dist
+public/bundle.js
+.git
+.gitignore
+*.log
+.DS_Store
+.env
+README.md
+assets

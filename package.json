@@ -1,0 +1,27 @@
+{
+  "name": "vexfront-io",
+  "version": "1.0.0",
+  "description": "VexFront.io - 2D Multiplayer .io Real-Time Strategy Game combining War of Dots swarm combat with OpenFront.io macro-economics and multi-lobby support",
+  "main": "dist/server.js",
+  "scripts": {
+    "build:server": "tsc",
+    "build:client": "esbuild src/client.ts --bundle --minify --target=es2020 --outfile=public/bundle.js",
+    "build": "npm run build:server && npm run build:client",
+    "start": "node dist/server.js",
+    "dev": "npm run build && node dist/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.10",
+    "@types/ws": "^8.5.12",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>VexFront.io — Tactical Swarm &amp; Macro Territory RTS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- MAIN GAME CANVAS -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- LOBBY & START OVERLAY (OpenFront-Style Multi-Lobby Browser) -->
+  <div id="lobbyOverlay" class="overlay-screen">
+    <div class="lobby-container">
+      <header class="lobby-header">
+        <div class="brand-badge">2D MULTIPLAYER .IO STRATEGY</div>
+        <h1 class="brand-title">VEX<span>FRONT</span>.IO</h1>
+        <p class="brand-subtitle">
+          Taktische Echtzeit-Dot-Schwärme (<em>War of Dots</em>) verschmolzen mit globaler Makro-Ökonomie, Seehandel &amp; Diplomatie (<em>OpenFront.io</em>)
+        </p>
+      </header>
+
+      <div class="lobby-grid">
+        <!-- Left Column: Commander Identity & Instant Play -->
+        <section class="lobby-card identity-card">
+          <h2>1. Commander Profil</h2>
+          <div class="form-group">
+            <label for="playerNameInput">Nickname</label>
+            <input type="text" id="playerNameInput" maxlength="18" placeholder="Commander Name..." value="" />
+          </div>
+
+          <div class="form-group">
+            <label>Fraktionsfarbe wählen</label>
+            <div id="colorPickerGrid" class="color-picker-grid"></div>
+          </div>
+
+          <button id="quickPlayBtn" class="btn-primary btn-large">
+            ⚡ SOFORT BEITRETEN (QUICK JOIN)
+          </button>
+
+          <div class="join-code-box">
+            <input type="text" id="joinCodeInput" maxlength="12" placeholder="Lobby-Code (z.B. VEX101)" />
+            <button id="joinByCodeBtn" class="btn-secondary">Mit Code beitreten</button>
+          </div>
+
+          <div class="controls-guide">
+            <h3>Steuerung &amp; Taktik</h3>
+            <ul>
+              <li><strong>Linksklick / Box-Select:</strong> Eigene Städte, Sammelpunkte oder Dot-Schwärme auswählen</li>
+              <li><strong>Rechtsklick:</strong> Schwarm entsenden / Angriffsbefehl / See-Invasion über Häfen</li>
+              <li><strong>Shift + Rechtsklick:</strong> Taktische Wegpunkte (Flankenmanöver) verketten</li>
+              <li><strong>Mausrad / Mittelklick / WASD:</strong> Kamera zoomen &amp; Karte schwenken</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- Right Column: OpenFront-Style Active Lobby Browser & Custom Lobby Creator -->
+        <section class="lobby-card browser-card">
+          <div class="browser-header">
+            <h2>2. Offene Lobbys &amp; Server</h2>
+            <button id="refreshLobbiesBtn" class="btn-small">↻ Aktualisieren</button>
+          </div>
+
+          <div id="lobbyListContainer" class="lobby-list">
+            <!-- Populated dynamically by client.ts -->
+          </div>
+
+          <div class="create-lobby-box">
+            <h3>Neue eigene Lobby erstellen</h3>
+            <div class="create-lobby-row">
+              <input type="text" id="customLobbyName" maxlength="26" placeholder="Lobby-Name (z.B. Clan Match #1)" />
+              <select id="customMapTemplate">
+                <option value="archipelago">Archipel (Inseln &amp; Seehandel)</option>
+                <option value="continents">Kontinente (Großmächte)</option>
+                <option value="pangaea">Pangäa (Massiver Landkrieg)</option>
+              </select>
+            </div>
+            <div class="create-lobby-options">
+              <label class="checkbox-label">
+                <input type="checkbox" id="customLobbyPublic" checked />
+                Öffentlich gelistet
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="customLobbyBots" checked />
+                Mit KI-Bots auf 15 auffüllen
+              </label>
+              <button id="createLobbyBtn" class="btn-accent">+ Lobby starten</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- IN-GAME HUD -->
+  <div id="hudContainer" class="hud-hidden">
+    <!-- TOP BAR: Economy, Population, Lobby Info & Leaderboard -->
+    <header class="hud-top">
+      <div class="hud-stats-panel">
+        <div class="stat-box gold-stat">
+          <span class="stat-label">GOLD</span>
+          <span id="hudGold" class="stat-value">400</span>
+          <span id="hudGoldRate" class="stat-rate">+0.0/s</span>
+        </div>
+
+        <div class="stat-box pop-stat">
+          <span class="stat-label">BEVÖLKERUNG</span>
+          <span id="hudPop" class="stat-value">120 / 350</span>
+          <div class="progress-bar-bg">
+            <div id="hudPopBar" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <div class="stat-box workforce-stat">
+          <span class="stat-label">ARBEITER / RESERVE</span>
+          <span id="hudWorkforce" class="stat-value">66 🛠 | 54 ⚔</span>
+          <span id="hudActiveDots" class="stat-sub">Aktive Truppen: 24</span>
+        </div>
+
+        <div class="stat-box territory-stat">
+          <span class="stat-label">TERRITORIUM (ZIEL: 80%)</span>
+          <span id="hudTerritory" class="stat-value">2.4%</span>
+        </div>
+
+        <div id="hudTraitorBadge" class="traitor-badge hidden">
+          ⚠ VERRÄTER-DEBUFF (<span id="hudTraitorTimer">60</span>s)
+        </div>
+      </div>
+
+      <div class="hud-right-panels">
+        <!-- Lobby Status & Switch Button -->
+        <div class="hud-lobby-bar">
+          <div class="lobby-tag">
+            <span id="hudLobbyName">EU #1</span>
+            <span id="hudLobbyCode" class="code-pill">CODE: VEX101</span>
+          </div>
+          <button id="hudStartNowBtn" class="btn-small btn-accent hidden">Jetzt starten</button>
+          <button id="hudLeaveLobbyBtn" class="btn-small btn-danger">Lobby wechseln</button>
+        </div>
+
+        <!-- Leaderboard & Diplomacy Panel -->
+        <div class="hud-leaderboard">
+          <div class="panel-title">
+            <span>FRAKTIONEN &amp; DIPLOMATIE</span>
+            <span id="hudPlayerCount">15/15</span>
+          </div>
+          <div id="hudAllianceRequests" class="alliance-requests"></div>
+          <div id="hudLeaderboardList" class="leaderboard-list"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- WAITING / VICTORY BANNER -->
+    <div id="centerBanner" class="center-banner hidden">
+      <h2 id="centerBannerTitle">SIEG!</h2>
+      <p id="centerBannerSub">Neues Gefecht startet in 10s...</p>
+    </div>
+
+    <!-- BOTTOM BAR: Worker/Troop Slider, Dispatch Percentage, Building Buttons & Minimap -->
+    <footer class="hud-bottom">
+      <!-- Minimap Left -->
+      <div class="minimap-panel">
+        <div class="minimap-header">
+          <span>MINIMAP</span>
+          <span id="selectionCounter" class="selection-pill">0 ausgewählt</span>
+        </div>
+        <canvas id="minimapCanvas" width="180" height="180"></canvas>
+      </div>
+
+      <!-- Center Tactical Dock -->
+      <div class="tactical-dock">
+        <!-- Control Row 1: Worker vs Troop Slider & Send Percentage -->
+        <div class="dock-row">
+          <div class="slider-control">
+            <div class="slider-labels">
+              <span>🛠 Arbeiter (<strong id="workerPctLabel">55%</strong>)</span>
+              <span>⚔ Truppen-Reserve (<strong id="troopPctLabel">45%</strong>)</span>
+            </div>
+            <input type="range" id="workerRatioSlider" min="0" max="100" value="55" />
+          </div>
+
+          <div class="dispatch-control">
+            <span class="control-title">ENTSENDE-MENGE</span>
+            <div class="btn-group">
+              <button class="pct-btn" data-pct="0.25">25%</button>
+              <button class="pct-btn active" data-pct="0.5">50%</button>
+              <button class="pct-btn" data-pct="1.0">100%</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Row 2: Infrastructure Construction Buttons -->
+        <div class="dock-row build-row">
+          <button class="build-btn" data-build="city" title="Erhöht Pop-Cap (+180) &amp; dient als Spawnpunkt für Dot-Schwärme (Taste 1)">
+            <span class="build-icon">⬢</span>
+            <div class="build-info">
+              <span class="build-name">Stadt [1]</span>
+              <span class="build-cost">250 Gold</span>
+            </div>
+          </button>
+
+          <button class="build-btn" data-build="port" title="Küsten-Hafen: Entsendet automatisch Handelsschiffe &amp; ermöglicht Wasser-Invasionen (Taste 2)">
+            <span class="build-icon">⚓</span>
+            <div class="build-info">
+              <span class="build-name">Hafen [2]</span>
+              <span class="build-cost">300 Gold</span>
+            </div>
+          </button>
+
+          <button class="build-btn" data-build="defense" title="Erzeugt Defensiv-Radius: +40% Kampfbonus für eigene Dots &amp; verlangsamt Feinde (Taste 3)">
+            <span class="build-icon">🛡</span>
+            <div class="build-info">
+              <span class="build-name">Verteidigung [3]</span>
+              <span class="build-cost">200 Gold</span>
+            </div>
+          </button>
+
+          <button class="build-btn" data-build="rally" title="Front-Sammelpunkt zum gezielten Spawnen &amp; Bündeln von Schwärmen (Taste 4)">
+            <span class="build-icon">⚑</span>
+            <div class="build-info">
+              <span class="build-name">Sammelpunkt [4]</span>
+              <span class="build-cost">100 Gold</span>
+            </div>
+          </button>
+
+          <button id="cancelBuildBtn" class="build-btn cancel-build hidden" title="Baumodus abbrechen (ESC)">
+            <span class="build-icon">✕</span>
+            <div class="build-info">
+              <span class="build-name">Abbrechen</span>
+              <span class="build-cost">ESC</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="bundle.js"></script>
+</body>
+</html>
